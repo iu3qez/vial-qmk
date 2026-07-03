@@ -86,11 +86,18 @@ commit pinnato da vial-qmk (`8bd61b80`).
   (`pixel_rain` non lo richiede), quindi è recuperabile togliendo il solo `#define`.
 - **Layer Diff overlay** (`luma40_layer_diff.c/.h`, cablato in `luma40.c`): quando gli
   effetti LED sono accesi e il layer attivo è ≠ base, lo sfondo si spegne e restano
-  accesi **solo** i tasti la cui definizione differisce dal layer 0, un colore per layer
-  (L1 rosso, L2 verde, L3 blu). Trasparenti esclusi (`kc != KC_TRANSPARENT && kc != base`).
-  Mask di 6 byte ricalcolata in `layer_state_set_user` (Approccio "cache"); disegnata nel
-  hook indicatori **prima** di `kb_rgb_matrix_indicators_common`, così Caps/connessione/
-  batteria/Win-lock restano sopra. La palette è fissa nel firmware (cambio = ricompilare).
+  accesi **solo** i tasti la cui definizione differisce dal layer 0. Trasparenti esclusi
+  (`kc != KC_TRANSPARENT && kc != base`). Ogni tasto acceso è colorato per **tipologia del
+  keycode** (non più un colore per layer): numeri=giallo, lettere=bianco, navigazione
+  (frecce+Ins/Home/PgUp/Del/End/PgDn)=ciano, simboli/punteggiatura=magenta, tutto il
+  resto (funzioni/wireless/RGB/modificatori)=arancione. La classificazione (`luma40_classify`)
+  sfrutta i range di keycode QMK contigui ed è **dinamica**: legge il keycode reale via
+  `keymap_key_to_keycode`, quindi segue i cambi di layout (keymap.c o Vial); layer-tap/
+  mod-tap e custom keycode cadono in "altro". Array di 47 byte (una categoria per LED, o
+  `CAT_NONE`) ricalcolato in `layer_state_set_user` (Approccio "cache"); disegnato nel hook
+  indicatori **prima** di `kb_rgb_matrix_indicators_common`, così Caps/connessione/batteria/
+  Win-lock restano sopra. La palette è fissa nel firmware (cambio = ricompilare). Colore
+  scalato per la luminosità RGB corrente. Costo: +12 byte flash vs la versione per-layer.
 
 ## Flash sul ferro
 
