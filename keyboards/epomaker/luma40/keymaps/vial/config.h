@@ -22,6 +22,10 @@
 #define VIAL_UNLOCK_COMBO_ROWS {0, 0}
 #define VIAL_UNLOCK_COMBO_COLS {0, 11}
 
-/* Con EEPROM_SIZE 2048 i tier automatici di vial.h assegnano 16 entry a
- * combo/key override/alt-repeat; lo spazio EEPROM residuo (~770 byte) va
- * alle macro. */
+/* Con EEPROM_SIZE 2048 i tier automatici di vial.h assegnerebbero 16 entry a
+ * ciascuna feature; le riduciamo a 12 per lasciare piu' margine alle macro
+ * (~144 byte recuperati, macro da ~440 a ~580 byte). */
+#define VIAL_TAP_DANCE_ENTRIES 12
+#define VIAL_COMBO_ENTRIES 12
+#define VIAL_KEY_OVERRIDE_ENTRIES 12
+#define VIAL_ALT_REPEAT_KEY_ENTRIES 12

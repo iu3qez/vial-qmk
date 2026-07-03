@@ -64,8 +64,10 @@ commit pinnato da vial-qmk (`8bd61b80`).
 
 - UID: `{0xB3, 0x52, 0xF8, 0xA7, 0x49, 0x3B, 0x36, 0xD0}`; sblocco: **Tab + Backspace**.
 - Profilo feature: tutte attive (tap dance, combo, key override, alt-repeat, QMK
-  Settings) con 16 slot ciascuna (tier automatici da EEPROM_SIZE=2048); ~440 byte
-  residui per le macro. Margini misurati: flash 85 KB su ~112, RAM libera ~1980 byte.
+  Settings) con **12 slot ciascuna** (i tier automatici sarebbero 16, ridotti in
+  `keymaps/vial/config.h` per lasciare margine); ~580 byte residui per le macro.
+  Margini misurati: flash 85 KB su ~112, RAM libera ~2340 byte. Nota: ridurre gli
+  slot libera sia EEPROM sia RAM (gli array di stato di tap dance/combo sono in RAM).
   Budget EEPROM: base 825 (57 config + 768 keymap 4 layer) + 40 settings + 3×160 entry.
 - Costi flash misurati, se serve rimodulare: QMK Settings +5,4 KB; Key Override,
   Repeat, Tap Dance, Combo +1,3–1,7 KB ciascuno.
