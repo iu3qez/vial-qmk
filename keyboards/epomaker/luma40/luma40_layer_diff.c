@@ -11,7 +11,8 @@ enum {
     CAT_LETTER,     // KC_A..KC_Z
     CAT_NAV,        // frecce + Ins/Home/PgUp/Del/End/PgDn
     CAT_SYMBOL,     // KC_MINUS..KC_SLASH (punteggiatura/simboli)
-    CAT_OTHER,      // tutto il resto (funzioni, wireless, RGB, modificatori, ...)
+    CAT_FUNCTION,   // KC_F1..KC_F12 e KC_F13..KC_F24
+    CAT_OTHER,      // tutto il resto (wireless, RGB, layer, modificatori, ...)
     CAT_COUNT,
 };
 #define CAT_NONE 0xFF // tasto non evidenziato (spento)
@@ -21,9 +22,10 @@ enum {
 static const uint8_t category_colors[CAT_COUNT][3] = {
     [CAT_NUMBER] = {255, 255,   0}, // giallo
     [CAT_LETTER] = {255, 255, 255}, // bianco
-    [CAT_NAV]    = {  0, 255, 255}, // ciano
-    [CAT_SYMBOL] = {255,   0, 255}, // magenta
-    [CAT_OTHER]  = {255, 165,   0}, // arancione
+    [CAT_NAV]      = {  0, 255, 255}, // ciano
+    [CAT_SYMBOL]   = {255,   0, 255}, // magenta
+    [CAT_FUNCTION] = {  0,   0, 255}, // blu (tasti F)
+    [CAT_OTHER]    = {255, 165,   0}, // arancione
 };
 
 // Categoria per LED: CAT_NONE = spento, altrimenti indice in category_colors.
@@ -44,6 +46,9 @@ static uint8_t luma40_classify(uint16_t kc) {
     }
     if (kc >= KC_INSERT && kc <= KC_UP) {
         return CAT_NAV;
+    }
+    if ((kc >= KC_F1 && kc <= KC_F12) || (kc >= KC_F13 && kc <= KC_F24)) {
+        return CAT_FUNCTION;
     }
     return CAT_OTHER;
 }
