@@ -17,6 +17,8 @@ static const uint8_t layer_colors[][3] = {
 
 static uint8_t layer_diff_mask[LAYER_DIFF_MASK_BYTES];
 
+// La mask è ricalcolata al CAMBIO LAYER (layer_state_set_user), non al cambio
+// keymap: un remap Vial del layer già attivo si riflette solo rientrando nel layer.
 void luma40_layer_diff_recompute(uint8_t layer) {
     memset(layer_diff_mask, 0, sizeof(layer_diff_mask));
     if (layer == 0) {
@@ -47,12 +49,19 @@ void luma40_layer_diff_overlay(uint8_t led_min, uint8_t led_max) {
         return;
     }
     // Fallback all'ultimo colore se ci sono più layer dei colori definiti.
-    uint8_t             idx   = (layer - 1 < LAYER_DIFF_COLOR_COUNT) ? (layer - 1) : (LAYER_DIFF_COLOR_COUNT - 1);
+    uint8_t             idx   = ((uint8_t)(layer - 1) < LAYER_DIFF_COLOR_COUNT) ? (layer - 1) : (LAYER_DIFF_COLOR_COUNT - 1);
     const uint8_t      *color = layer_colors[idx];
+
+    // Scala la palette per la luminosità RGB corrente, così i tasti-diff seguono
+    // il livello impostato dall'utente (come fa l'animazione base).
+    uint8_t val = rgb_matrix_get_val();
+    uint8_t r   = (uint8_t)((uint16_t)color[0] * val / 255);
+    uint8_t g   = (uint8_t)((uint16_t)color[1] * val / 255);
+    uint8_t b   = (uint8_t)((uint16_t)color[2] * val / 255);
 
     for (uint8_t led = led_min; led < led_max; led++) {
         if (layer_diff_mask[led / 8] & (uint8_t)(1u << (led % 8))) {
-            rgb_matrix_set_color(led, color[0], color[1], color[2]);
+            rgb_matrix_set_color(led, r, g, b);
         } else {
             rgb_matrix_set_color(led, 0, 0, 0);
         }
