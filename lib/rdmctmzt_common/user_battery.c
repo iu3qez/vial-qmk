@@ -297,10 +297,10 @@ void User_Adc_Batt_Power_Up_Init(void) {
     User_Batt_BaiFen = Temp_Batt_Number;
     User_Batt_Old_BaiFen = User_Batt_BaiFen;
 
-    if (User_Batt_BaiFen != Keyboard_Info.Batt_Number) {
-        Keyboard_Info.Batt_Number = User_Batt_BaiFen;
-        Save_Flash_Set();
-    }
+    // Battery level is kept in RAM only; it is re-sampled from the ADC within a
+    // second of boot, so persisting it to flash would only wear the user page
+    // (a full page erase per change, no wear leveling) for no functional gain.
+    Keyboard_Info.Batt_Number = User_Batt_BaiFen;
 
     User_Adc_Batt_Count = 0;
     User_Batt_10ms_Count = 0;
@@ -314,8 +314,7 @@ void User_Adc_Batt_Number(void) {
         User_Batt_Old_BaiFen = 100;
         if (Keyboard_Info.Batt_Number != User_Batt_BaiFen) {
             Keyboard_Info.Batt_Number = User_Batt_BaiFen;
-            User_Batt_Send_Spi = true;
-            Save_Flash_Set();
+            User_Batt_Send_Spi = true;  // report over SPI, but do not persist (see above)
         }
         User_Power_Low = false;
         User_Power_Low_Count = 0;
@@ -412,7 +411,6 @@ void User_Adc_Batt_Number(void) {
 
     if (Keyboard_Info.Batt_Number != User_Batt_BaiFen) {
         Keyboard_Info.Batt_Number = User_Batt_BaiFen;
-        User_Batt_Send_Spi = true;
-        Save_Flash_Set();
+        User_Batt_Send_Spi = true;  // report over SPI, but do not persist (see above)
     }
 }
