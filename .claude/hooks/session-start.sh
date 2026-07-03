@@ -53,7 +53,25 @@ git config --global --add safe.directory "$REPO" || true
 git submodule sync --recursive
 git submodule update --init --recursive
 
-# --- 5. Persist environment for the session -----------------------------------
+# --- 5. Claude Code plugins (superpowers) -------------------------------------
+# The repo declares the `superpowers` plugin in .claude/settings.json, but this
+# remote image sets SKIP_PLUGIN_MARKETPLACE=true, which disables the automatic
+# "install declared plugins at session start" step. The plugin cache also lives
+# in the ephemeral container home (~/.claude/plugins), so it must be repopulated
+# on every fresh container. We do it here, non-interactively, overriding the
+# skip flag only for these commands. Failures are non-fatal: a missing plugin
+# must never block the firmware build environment.
+if command -v claude >/dev/null 2>&1; then
+    echo ">> Installing Claude Code plugins (superpowers)..."
+    SKIP_PLUGIN_MARKETPLACE=false claude plugin marketplace add \
+        obra/superpowers-marketplace 2>&1 | sed 's/^/   /' || \
+        echo "   (marketplace add skipped/failed; continuing)"
+    SKIP_PLUGIN_MARKETPLACE=false claude plugin install \
+        superpowers@superpowers-marketplace --scope project 2>&1 | sed 's/^/   /' || \
+        echo "   (plugin install skipped/failed; continuing)"
+fi
+
+# --- 6. Persist environment for the session -----------------------------------
 if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
     {
         echo "export VIRTUAL_ENV=\"$REPO/.venv\""
