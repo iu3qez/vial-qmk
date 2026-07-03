@@ -76,6 +76,22 @@ commit pinnato da vial-qmk (`8bd61b80`).
   da `QK_KB`). La `VIA_Mapping_Luma40.JSON` nella dir della tastiera è **stale**
   (era per il firmware a blob): non usarla come riferimento.
 
+## LED: effetti + Layer Diff overlay
+
+- **Effetti RGB ridotti** a soli `solid_color` + `pixel_rain` (in `keyboard.json`):
+  gli altri ~48 sono disabilitati. Risparmio misurato sulla keymap `vial`:
+  **flash 92062 → 77148 B (−14,9 KB)** e, bonus, **RAM libera 2336 → 2688 B (+352 B)**
+  perché il taglio degli effetti reattivi rimuove il tracker di `RGB_MATRIX_KEYREACTIVE`.
+  `RGB_MATRIX_FRAMEBUFFER_EFFECTS` è tenuto (96 byte): nessun effetto residuo lo usa
+  (`pixel_rain` non lo richiede), quindi è recuperabile togliendo il solo `#define`.
+- **Layer Diff overlay** (`luma40_layer_diff.c/.h`, cablato in `luma40.c`): quando gli
+  effetti LED sono accesi e il layer attivo è ≠ base, lo sfondo si spegne e restano
+  accesi **solo** i tasti la cui definizione differisce dal layer 0, un colore per layer
+  (L1 rosso, L2 verde, L3 blu). Trasparenti esclusi (`kc != KC_TRANSPARENT && kc != base`).
+  Mask di 6 byte ricalcolata in `layer_state_set_user` (Approccio "cache"); disegnata nel
+  hook indicatori **prima** di `kb_rgb_matrix_indicators_common`, così Caps/connessione/
+  batteria/Win-lock restano sopra. La palette è fissa nel firmware (cambio = ricompilare).
+
 ## Flash sul ferro
 
 Bootloader: bootmagic tenendo premuto **Tab** (matrice 0,0) all'inserimento del cavo,
