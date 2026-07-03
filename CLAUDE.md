@@ -53,6 +53,12 @@ commit pinnato da vial-qmk (`8bd61b80`).
 - **In vial-qmk le build solo-VIA sono vietate** (`#error` in `quantum/via.c`):
   il keymap `default` compila senza VIA, con fallback `keymap_key_to_keycode` in
   `user_system.c` per il tasto di wakeup.
+- **Pagina flash "user" senza wear leveling**: `Keyboard_Info` è salvato con un
+  erase+riscrittura completo di pagina (`eeprom_write_block_user`, 0x1BE00), diverso
+  dal journal QMK. Il livello batteria NON viene più persistito (solo RAM + report SPI):
+  era la fonte principale di usura. Salvano ancora su flash solo i cambi di modalità
+  wireless / Win-lock / NKRO — eventi rari. Non reintrodurre `Save_Flash_Set()` nei
+  percorsi batteria di `user_battery.c`.
 
 ## Keymap vial
 
