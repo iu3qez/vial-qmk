@@ -80,7 +80,7 @@ commit pinnato da vial-qmk (`8bd61b80`).
 
 - **Effetti RGB ridotti** a soli `solid_color` + `pixel_rain` (in `keyboard.json`):
   gli altri ~48 sono disabilitati. Risparmio misurato sulla keymap `vial`:
-  **flash 92062 → 77148 B (−14,9 KB)** e, bonus, **RAM libera 2336 → 2688 B (+352 B)**
+  **flash 92062 → 77204 B (−14,5 KB)** e, bonus, **RAM libera 2336 → 2688 B (+352 B)**
   perché il taglio degli effetti reattivi rimuove il tracker di `RGB_MATRIX_KEYREACTIVE`.
   `RGB_MATRIX_FRAMEBUFFER_EFFECTS` è tenuto (96 byte): nessun effetto residuo lo usa
   (`pixel_rain` non lo richiede), quindi è recuperabile togliendo il solo `#define`.
