@@ -90,7 +90,7 @@ commit pinnato da vial-qmk (`8bd61b80`).
   (`kc != KC_TRANSPARENT && kc != base`). Ogni tasto acceso è colorato per **tipologia del
   keycode** (non più un colore per layer): numeri=giallo, lettere=bianco, navigazione
   (frecce+Ins/Home/PgUp/Del/End/PgDn)=ciano, simboli/punteggiatura=magenta, tasti F
-  (F1–F24)=blu, tutto il resto (wireless/RGB/layer/modificatori)=arancione. La classificazione (`luma40_classify`)
+  (F1–F24)=blu, tutto il resto (wireless/RGB/layer/modificatori)=viola. La classificazione (`luma40_classify`)
   sfrutta i range di keycode QMK contigui ed è **dinamica**: legge il keycode reale via
   `keymap_key_to_keycode`, quindi segue i cambi di layout (keymap.c o Vial); layer-tap/
   mod-tap e custom keycode cadono in "altro". Array di 47 byte (una categoria per LED, o

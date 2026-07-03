@@ -25,7 +25,7 @@ static const uint8_t category_colors[CAT_COUNT][3] = {
     [CAT_NAV]      = {  0, 255, 255}, // ciano
     [CAT_SYMBOL]   = {255,   0, 255}, // magenta
     [CAT_FUNCTION] = {  0,   0, 255}, // blu (tasti F)
-    [CAT_OTHER]    = {255, 165,   0}, // arancione
+    [CAT_OTHER]    = {150,   0, 255}, // viola
 };
 
 // Categoria per LED: CAT_NONE = spento, altrimenti indice in category_colors.
