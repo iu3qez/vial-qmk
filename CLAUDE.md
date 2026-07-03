@@ -32,6 +32,17 @@ commit pinnato da vial-qmk (`8bd61b80`).
 
 - `keyboards/epomaker/luma40/` — definizione tastiera (matrice 6×16, 47 tasti/LED,
   layout `LAYOUT_tkl_ansi`). Keymap: `default` (senza VIA) e `vial`.
+  - **RGB Matrix**: driver `custom` (hardware in `user_led_custom.c`), framework
+    animazioni standard QMK. Effetti ridotti a `solid_color` + `pixel_rain` per
+    liberare flash; `RGB_MATRIX_KEYPRESSES/KEYRELEASES` disabilitati (nessun effetto
+    reattivo → hit-tracker fuori dalla RAM). `RGB_MATRIX_FRAMEBUFFER_EFFECTS` resta
+    per pixel_rain.
+  - **Layer highlight** (`luma40.c`, `kb_layer_highlight`): su un layer non-base, i
+    tasti il cui keycode dinamico differisce dal layer 0 si illuminano con un colore
+    per-layer (ciano/magenta/arancio per L1/L2/L3), overlay sull'animazione. Usa
+    `layer_switch_get_layer` (gestisce le trasparenze) + `keymap_key_to_keycode` (legge
+    il keymap Vial live). Disegnato prima di `kb_rgb_matrix_indicators_common` così gli
+    overlay vendor (batteria/Caps/Fn) vincono sopra.
 - `lib/rdmctmzt_common/` — libreria vendor a sorgenti: wireless tri-mode
   (USB / 3×BLE / 2.4G via SPI), batteria, EEPROM emulata, LED custom.
 - Modifiche al core vial-qmk (tenerle in commit separati per eventuali PR upstream):
@@ -66,8 +77,9 @@ commit pinnato da vial-qmk (`8bd61b80`).
 - Profilo feature: tutte attive (tap dance, combo, key override, alt-repeat, QMK
   Settings) con **12 slot ciascuna** (i tier automatici sarebbero 16, ridotti in
   `keymaps/vial/config.h` per lasciare margine); ~580 byte residui per le macro.
-  Margini misurati: flash 85 KB su ~112, RAM libera ~2340 byte. Nota: ridurre gli
-  slot libera sia EEPROM sia RAM (gli array di stato di tap dance/combo sono in RAM).
+  Margini misurati: flash ~74,8 KB su ~112, RAM libera ~2784 byte (heap). Nota:
+  ridurre gli slot libera sia EEPROM sia RAM (gli array di stato di tap dance/combo
+  sono in RAM).
   Budget EEPROM: base 825 (57 config + 768 keymap 4 layer) + 40 settings + 3×160 entry.
 - Costi flash misurati, se serve rimodulare: QMK Settings +5,4 KB; Key Override,
   Repeat, Tap Dance, Combo +1,3–1,7 KB ciascuno.

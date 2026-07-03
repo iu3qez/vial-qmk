@@ -64,7 +64,58 @@ led_config_t g_led_config = {
 // QMK Callback Functions - Delegate to common implementations
 // ============================================================================
 
+// ============================================================================
+// Per-layer key highlight
+// ----------------------------------------------------------------------------
+// When a non-base layer is active, each key whose (dynamic) keycode differs
+// from the base layer lights up in a per-layer color, overlaid on top of the
+// running RGB Matrix animation. Transparent keys fall through to a lower layer
+// and are left untouched, so only genuinely remapped keys light up.
+// The highlight is drawn *before* the common indicators, so the vendor overlays
+// (battery, caps, Fn, connection...) always win on top of it.
+// ============================================================================
+
+// One RGB color per layer; index 0 (base layer) is unused.
+static const uint8_t layer_hl_colors[][3] = {
+    {0,   0,   0  },  // layer 0 - base, no highlight
+    {0,   255, 255},  // layer 1 - cyan
+    {255, 0,   255},  // layer 2 - magenta
+    {255, 128, 0  },  // layer 3 - orange
+};
+#define LAYER_HL_COUNT (sizeof(layer_hl_colors) / sizeof(layer_hl_colors[0]))
+
+static void kb_layer_highlight(uint8_t led_min, uint8_t led_max) {
+    if (get_highest_layer(layer_state) == 0) {
+        return; // base layer: nothing to highlight
+    }
+
+    uint8_t val = rgb_matrix_get_val();
+
+    for (uint8_t row = 0; row < MATRIX_ROWS; row++) {
+        for (uint8_t col = 0; col < MATRIX_COLS; col++) {
+            uint8_t led = g_led_config.matrix_co[row][col];
+            if (led == NO_LED || led < led_min || led >= led_max) {
+                continue;
+            }
+            keypos_t pos   = {.col = col, .row = row};
+            uint8_t  layer = layer_switch_get_layer(pos);
+            if (layer == 0 || layer >= LAYER_HL_COUNT) {
+                continue;
+            }
+            // Skip keys that resolve to the base keycode (e.g. transparent keys).
+            if (keymap_key_to_keycode(layer, pos) == keymap_key_to_keycode(0, pos)) {
+                continue;
+            }
+            rgb_matrix_set_color(led,
+                                 (layer_hl_colors[layer][0] * val) / 255,
+                                 (layer_hl_colors[layer][1] * val) / 255,
+                                 (layer_hl_colors[layer][2] * val) / 255);
+        }
+    }
+}
+
 bool rgb_matrix_indicators_advanced_user(uint8_t led_min, uint8_t led_max) {
+    kb_layer_highlight(led_min, led_max);
     return kb_rgb_matrix_indicators_common(led_min, led_max);
 }
 

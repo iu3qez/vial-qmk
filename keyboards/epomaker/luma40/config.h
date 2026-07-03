@@ -51,8 +51,9 @@
 #define TRANSIENT_EEPROM_SIZE 4096
 
 #define RGB_MATRIX_LED_COUNT 47
-#define RGB_MATRIX_KEYPRESSES
-#define RGB_MATRIX_KEYRELEASES
+// Reactive effects (RGB_MATRIX_KEYPRESSES/KEYRELEASES) are intentionally
+// disabled: no reactive animation is enabled, so dropping the hit tracker
+// reclaims RAM on the 16 KB MCU. FRAMEBUFFER_EFFECTS stays for pixel_rain.
 #define RGB_MATRIX_FRAMEBUFFER_EFFECTS
 #define RGB_DISABLE_AFTER_TIMEOUT 0
 #define RGB_MATRIX_LED_FLUSH_LIMIT 16
