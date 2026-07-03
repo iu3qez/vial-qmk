@@ -18,6 +18,7 @@
  */
 
 #include "keyboard_common.h"
+#include "luma40_layer_diff.h"
 
 #ifndef NO_LED
 #    define NO_LED 255
@@ -65,7 +66,13 @@ led_config_t g_led_config = {
 // ============================================================================
 
 bool rgb_matrix_indicators_advanced_user(uint8_t led_min, uint8_t led_max) {
+    luma40_layer_diff_overlay(led_min, led_max);
     return kb_rgb_matrix_indicators_common(led_min, led_max);
+}
+
+layer_state_t layer_state_set_user(layer_state_t state) {
+    luma40_layer_diff_recompute(get_highest_layer(state));
+    return state;
 }
 
 void notify_usb_device_state_change_user(struct usb_device_state usb_device_state) {
@@ -86,6 +93,7 @@ void board_init(void) {
 
 void keyboard_post_init_user(void) {
     kb_keyboard_post_init();
+    luma40_layer_diff_recompute(get_highest_layer(layer_state));
 }
 
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {

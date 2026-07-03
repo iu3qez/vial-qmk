@@ -46,3 +46,6 @@ VPATH += lib/chibios-contrib/os/common/ext/CMSIS/ES32/FS026/md
 SRC += lib/chibios-contrib/os/common/ext/CMSIS/ES32/FS026/md/md_spi.c
 
 DEBOUNCE_TYPE = asym_eager_defer_pk
+
+# Layer Diff LED overlay
+SRC += luma40_layer_diff.c
