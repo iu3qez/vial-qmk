@@ -91,9 +91,14 @@ void board_init(void) {
     kb_board_init();
 }
 
+/* Hook di keymap eseguito a fine post-init (dopo il reset EEPROM di via_init).
+ * Il keymap vial lo usa per riseminare i combo di default; gli altri no-op. */
+__attribute__((weak)) void luma40_keymap_post_init(void) {}
+
 void keyboard_post_init_user(void) {
     kb_keyboard_post_init();
     luma40_layer_diff_recompute(get_highest_layer(layer_state));
+    luma40_keymap_post_init();
 }
 
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {

@@ -75,6 +75,17 @@ commit pinnato da vial-qmk (`8bd61b80`).
   `Custom_Keycodes` in `lib/rdmctmzt_common/rdmctmzt_common.h` (mapping posizionale
   da `QK_KB`). La `VIA_Mapping_Luma40.JSON` nella dir della tastiera è **stale**
   (era per il firmware a blob): non usarla come riferimento.
+- **Bake del layout da `.vil`**: i **layer** vengono bakeati nell'array `keymaps[]`
+  di `keymap.c` (sono il default caricato da `dynamic_keymap_reset()` a EE_CLR/primo
+  boot). I **combo**, invece, NON stanno in keymap.c: Vial li tiene in EEPROM e
+  `dynamic_keymap_reset()` li **azzera**. Per bakearli come default c'è
+  `luma40_keymap_post_init()` in `keymap.c`: gira in `keyboard_post_init_user`
+  (in `luma40.c`, via hook weak) **dopo** il reset di `via_init`, riscrive gli slot
+  combo **vuoti** con `dynamic_keymap_set_combo()` e ricarica la copia RAM con
+  `vial_init()`. Slot editati dall'utente (output≠KC_NO) non vengono sovrascritti.
+  Layout corrente (LUMA899.vil): 4 layer; combo `` ` ``+LAlt→MO(3), MO(2)+LCtrl→MO(1)
+  (sostituiscono i vecchi `LT()` su layer 0). Tap dance/key override/alt-repeat: stessa
+  logica se un giorno servisse bakearli (stesso hook, `dynamic_keymap_set_*`).
 
 ## LED: effetti + Layer Diff overlay
 

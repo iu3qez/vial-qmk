@@ -26,7 +26,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
         KC_TAB,  KC_Q,          KC_W,   KC_E,          KC_R,     KC_T,     KC_Y,    KC_U,    KC_I,    KC_O,     KC_P,     KC_BSPC,
         KC_CAPS, KC_A,          KC_S,   KC_D,          KC_F,     KC_G,     KC_H,    KC_J,    KC_K,    KC_L,     KC_SCLN,  KC_ENT,
         KC_LSFT, KC_Z,          KC_X,   KC_C,          KC_V,     KC_B,     KC_N,    KC_M,    KC_COMM, KC_DOT,   KC_UP ,   KC_QUOT,
-        MO(2),   LT(1,KC_LCTL), KC_GRV, LT(3,KC_LALT), KC_LGUI,            KC_SPC,  KC_RALT, KC_SLSH, KC_LEFT,  KC_DOWN,  KC_RGHT
+        MO(2),   KC_LCTL,       KC_GRV, KC_LALT,       KC_LGUI,            KC_SPC,  KC_RALT, KC_SLSH, KC_LEFT,  KC_DOWN,  KC_RGHT
     ),
     [1] = LAYOUT_tkl_ansi(
         KC_F1,   KC_F2,   KC_F3,     KC_F4,    KC_F5,      KC_F6,     KC_F7,    KC_F8,    KC_F9,   KC_F10,   KC_F11,        KC_F12,
@@ -48,3 +48,33 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     )
 };
 // clang-format on
+
+/* --- Bake dei combo di default (accesso ai layer) ------------------------- *
+ * A differenza dei layer, i combo Vial NON stanno in keymap.c: vivono in EEPROM
+ * e dynamic_keymap_reset() (chiamato da via_init a ogni EE_CLR / primo boot) li
+ * azzera. Per renderli comunque dei default li riseminiamo qui se lo slot è vuoto,
+ * poi ricarichiamo la copia RAM di Vial con vial_init(). Un edit dell'utente nello
+ * slot lo rende non-vuoto -> non viene risovrascritto. Sorgente: LUMA899.vil.
+ *   slot 0: KC_GRV + KC_LALT -> MO(3)
+ *   slot 1: MO(2)  + KC_LCTL -> MO(1)
+ * Chiamato da keyboard_post_init_user (in luma40.c) DOPO il reset di via_init.   */
+#include "vial.h"
+#include "dynamic_keymap.h"
+
+void luma40_keymap_post_init(void) {
+    static const vial_combo_entry_t defaults[] = {
+        { .input = {KC_GRV, KC_LALT, KC_NO, KC_NO}, .output = MO(3) },
+        { .input = {MO(2),  KC_LCTL, KC_NO, KC_NO}, .output = MO(1) },
+    };
+    bool seeded = false;
+    for (uint8_t i = 0; i < sizeof(defaults) / sizeof(defaults[0]); i++) {
+        vial_combo_entry_t cur = {0};
+        if (dynamic_keymap_get_combo(i, &cur) == 0 && cur.output == KC_NO) {
+            dynamic_keymap_set_combo(i, &defaults[i]);
+            seeded = true;
+        }
+    }
+    if (seeded) {
+        vial_init();   // ricarica key_combos[] dall'EEPROM appena seminata
+    }
+}
