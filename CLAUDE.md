@@ -89,12 +89,15 @@ commit pinnato da vial-qmk (`8bd61b80`).
 
 ## LED: effetti + Layer Diff overlay
 
-- **Effetti RGB ridotti** a soli `solid_color` + `pixel_rain` (in `keyboard.json`):
-  gli altri ~48 sono disabilitati. Risparmio misurato sulla keymap `vial`:
-  **flash 92062 → 77204 B (−14,5 KB)** e, bonus, **RAM libera 2336 → 2688 B (+352 B)**
-  perché il taglio degli effetti reattivi rimuove il tracker di `RGB_MATRIX_KEYREACTIVE`.
-  `RGB_MATRIX_FRAMEBUFFER_EFFECTS` è tenuto (96 byte): nessun effetto residuo lo usa
-  (`pixel_rain` non lo richiede), quindi è recuperabile togliendo il solo `#define`.
+- **Effetti RGB: tutti i 50 riattivati** in `keyboard.json` (inclusi reattivi e
+  framebuffer). C'era stata una fase in cui erano ridotti a `solid_color` + `pixel_rain`
+  per risparmiare (−14,5 KB flash, +352 B RAM), ma con ~40 KB flash liberi si è deciso di
+  ripristinarli. Costo misurato del ripristino completo sulla keymap `vial`:
+  **flash 73500 → 85580 B (+11,8 KB, restano ~28 KB liberi)** e **RAM heap 2656 → 2272 B
+  (−384 B)** per il tracker `RGB_MATRIX_KEYREACTIVE` che gli effetti reattivi riaggiungono.
+  Se un domani servisse RAM, ritagliare partendo dai reattivi (`solid_reactive*`,
+  `splash*`, `typing_heatmap`, `digital_rain`) è la leva: sono gli unici che costano RAM,
+  gli altri costano solo flash. `vialrgb_direct` è interno a VialRGB (non in lista).
 - **Layer Diff overlay** (`luma40_layer_diff.c/.h`, cablato in `luma40.c`): quando gli
   effetti LED sono accesi e il layer attivo è ≠ base, lo sfondo si spegne e restano
   accesi **solo** i tasti la cui definizione differisce dal layer 0. Trasparenti esclusi
