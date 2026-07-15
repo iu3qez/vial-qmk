@@ -45,8 +45,16 @@ commit pinnato da vial-qmk (`8bd61b80`).
 - **RAM 16 KB**: non fidarsi di `arm-none-eabi-size` (ChibiOS riempie la RAM con
   heap/stack, bss appare sempre pieno). Misurare il margine reale con i simboli
   `__heap_base__`/`__heap_end__` o la sezione `.heap`. Stato attuale: **~2,4 KB liberi**.
+- **FLASH: ~81,4 KB per il codice, NON 112 KB** — limite verificato sul ferro, vedi
+  "Limite di flash reale". Sforarlo = firmware che non parte, senza alcun errore in
+  compilazione. È il vincolo più stretto del porting insieme alla RAM.
+- **Il flash è intermittente**: una scheda "morta" dopo un flash spesso rivive
+  ricopiando lo stesso `.bin` — vedi "Flash intermittente". Non dedurre nulla sul
+  firmware da un singolo tentativo.
 - **EEPROM emulata** (`lib/rdmctmzt_common/user_eeprom.c`): journal a 2 pagine flash
-  da 8 KB a `0x1C000` (gli ultimi 16 KB dei 128 KB di flash → ~112 KB per il codice).
+  da 8 KB a `0x1C000`, preceduto dalla pagina "user" a `0x1BE00`. Attenzione: i
+  ~112 KB che si otterrebbero contando `0x1BE00` dall'indirizzo 0 sono **sbagliati**,
+  perché l'app non parte da 0 — vedi "Limite di flash reale".
   Ogni record da 4 byte contiene 2 byte di dato → max teorico ~4 KB.
   `EEPROM_SIZE` è 2048; la cache RAM costa `EEPROM_SIZE + 66` byte, quindi ogni KB di
   EEPROM in più toglie 1 KB alla heap.
@@ -59,6 +67,87 @@ commit pinnato da vial-qmk (`8bd61b80`).
   era la fonte principale di usura. Salvano ancora su flash solo i cambi di modalità
   wireless / Win-lock / NKRO — eventi rari. Non reintrodurre `Save_Flash_Set()` nei
   percorsi batteria di `user_battery.c`.
+
+## Limite di flash reale: ~81,4 KB (verificato sul ferro, 15 lug 2026)
+
+**L'app ha ~81,4 KB, non ~112 KB.** Superarli produce un firmware che **non parte**
+(nessun LED, nessuna enumerazione) e **il compilatore non se ne accorge**: il linker
+script dichiara `flash0 org = 0x00000000, len = 128k` (`FS026.ld`), che è una bugia.
+
+**Perché:** l'app è linkata a `0x0` ma vive **fisicamente sopra il bootloader**, che la
+rimappa. `ES_MCU_MEM_REMAP_OFFSET` (`user_eeprom.c:59`) legge `REALBASE` da
+`SYSCFG->REMAP` a runtime. Lo spazio vero è `0x1BE00 − REALBASE` (`0x1BE00` = pagina
+"user", il primo dato sopra l'app). I dati implicano **`REALBASE = 0x8000`**, cioè un
+bootloader da 32 KB → limite **81408** (`0x13E00`) oppure **81920** (`0x14000`) se il
+confine fosse il journal invece della pagina user: i due non sono stati separati
+(servirebbe il build da 81600 B). **Usare 81408 come budget.**
+
+**Come è stato dimostrato** (padding di byte inerti in `.rodata`, a heap costante — così
+la dimensione flash è l'**unica** variabile e la RAM è esclusa per costruzione):
+
+| build | flash | heap | boota |
+|---|---|---|---|
+| `f4bc334` | 73392 | 2656 | ✓ |
+| `2c06b88` | 73500 | 2656 | ✓ |
+| padding | 80924 | 2656 | ✓ |
+| padding | **82924** | **2656** | **✗** |
+| `b6f10ea` | 85580 | 2272 | ✗ |
+
+Le due build col padding differiscono **solo** per 2000 B di `.rodata`: heap identica,
+comportamento identico. Una parte, l'altra no → è la flash, non la RAM.
+
+**Se un firmware sfora, la leva è `LTO_ENABLE = yes`**: sui 50 effetti RGB fa
+**85580 → 76288 B (−10,9%)** e per giunta **+464 B di heap** (2272 → 2736), perché
+elimina anche dati morti. Non è attiva di default in questo porting.
+⚠️ La LTO può risolvere male i **simboli weak**: `luma40_keymap_post_init()` (bake dei
+combo) è agganciata da `luma40.c` con un hook weak. Dopo un build LTO **verificare che i
+combo rispondano**; se non lo fanno, togliere il `weak` e chiamarla direttamente.
+
+## Flash intermittente: un tentativo solo NON è un test (15 lug 2026)
+
+**Il bootloader è inaffidabile: lo stesso `.bin` può non partire a un tentativo e
+partire a quello dopo.** Verificato sul ferro con due firmware diversi (`f4bc334` e
+`2c06b88`): dati per "non funzionanti" dopo un flash, sono partiti entrambi
+ricopiando **lo stesso identico file**, senza ricompilare nulla.
+
+Sintomo di un flash andato male: nessun LED, nessuna enumerazione USB, nessun segno di
+vita. Il **bootloader però risponde sempre**: la scheda non è mai brickata, si recupera
+ricopiando il `.bin`. Se una scheda sembra morta, **riprovare il flash più volte prima
+di sospettare del firmware**.
+
+**Regola metodologica (imparata sbagliando):** non concludere mai nulla da un singolo
+tentativo di flash — né "è rotto" né "è a posto". Con un apparato intermittente un
+tentativo isolato misura la fortuna della copia, non il codice.
+
+Qui c'erano **due fenomeni sovrapposti e indipendenti**: questa intermittenza (rumore)
+e un limite di flash reale (segnale, vedi sezione precedente). Il rumore ha depistato
+in **entrambe** le direzioni: prima ha fatto sembrare rotti dei build sani (`f4bc334`,
+`2c06b88`, falliti una volta e poi partiti col medesimo file), poi — una volta scoperta
+l'intermittenza — ha quasi fatto archiviare come "artefatto" la soglia vera, che invece
+esisteva. La discriminante è stata la **riproducibilità**: `b6f10ea` non è partito *mai*,
+gli altri partivano a ritentare. Chiedersi "è riproducibile?" al primo esito anomalo,
+non al quinto.
+
+**Domanda aperta:** perché il flash è intermittente. Non è indagato. Ipotesi non
+verificate: copia non sincronizzata su disco prima dello scollegamento, oppure il
+bootloader richiede un eject/attesa. Non esiste oggi un passo di **verifica**
+dell'immagine scritta: sarebbe la prima cosa da aggiungere.
+
+**Fatti sul codice raccolti durante l'indagine** (letti nei sorgenti, questi sì solidi):
+- Le attese su `ES_SPI_ACK_IO` **hanno** timeout (`user_spi.c:174` = 2000 iterazioni,
+  `user_system.c:249` = 100 ms): un hang del wireless non è una spiegazione plausibile.
+- `DEBOUNCE_TYPE = asym_eager_defer_pk` e `debounce_init()`
+  (`quantum/debounce/asym_eager_defer_pk.c:67`) fa `malloc` **senza check NULL** e
+  scrive subito: se la heap finisse → deref di null → hardfault al boot. Serve
+  6×16×4 = 384 B. Non è mai stato osservato accadere, ma smentisce l'idea che la heap
+  sia "RAM inutilizzata": **è usata davvero**.
+- `ES_MCU_MEM_REMAP_OFFSET` (`user_eeprom.c:59`) legge `REALBASE` da `SYSCFG->REMAP`
+  **a runtime** (bit 12..16, granularità 4 KB): l'app è linkata a `0x0` ma vive
+  fisicamente sopra il bootloader, quindi lo spazio vero per il codice è
+  `0x1C000 − REALBASE`, **non** i ~112 KB dichiarati altrove in questo file. Il valore
+  di `REALBASE` resta ignoto; per misurarlo sul ferro c'è `g_tst_remap_offset`
+  (`user_eeprom.c:548`). Nessun problema di spazio è mai stato osservato: la cifra è
+  solo **non verificata**, non necessariamente sbagliata.
 
 ## Keymap vial
 
